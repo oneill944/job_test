@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Munkaidő Naptár v11 - Halmozott Egyenleg</title>
+    <title>Munkaidő Naptár v12 - Dinamikus Egyenleg</title>
     <style>
         :root { --p: #005691; --bg: #f4f7f9; --text: #333; --ok: #28a745; --less: #dc3545; --more: #fd7e14; --vac: #007bff; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; display: flex; justify-content: center; }
@@ -50,7 +50,7 @@
         <select id="mSel" class="month-sel" onchange="renderCalendar()"></select>
         <div class="stats">
             <div><small>Havi munka</small><span id="tWork" class="stat-val">0ó 0p</span></div>
-            <div><small>Összes +/-</small><span id="tBal" class="stat-val">0ó 0p</span></div>
+            <div><small id="balLabel">Egyenleg (eddig)</small><span id="tBal" class="stat-val">0ó 0p</span></div>
         </div>
     </div>
 
@@ -144,6 +144,7 @@
         const el = document.getElementById(`day-${d}`);
         if(el) el.classList.add('selected');
         loadDayData();
+        calculateTotals(); // Frissítjük a statisztikát a kiválasztott napra!
     }
 
     function loadDayData() {
@@ -199,16 +200,21 @@
         let cumulativeBalance = 0;
         let monthlyWork = 0;
 
-        // Végigmegyünk januártól az aktuálisan kiválasztott hónapig
+        // Végigmegyünk az év hónapjain
         for (let m = 0; m <= currentM; m++) {
             const saved = JSON.parse(localStorage.getItem(`work_v10_${m}`)) || {};
-            for (let d in saved) {
+            // Rendezett napok szerinti feldolgozás
+            const days = Object.keys(saved).map(Number).sort((a, b) => a - b);
+            
+            for (let d of days) {
+                // Ha az aktuális hónapban járunk, csak a kiválasztott NAP-ig számolunk bele az egyenlegbe
+                if (m === currentM && d > currentDay) continue;
+
                 if (saved[d].s && saved[d].e) {
                     const netto = calcNetto(saved[d].s, saved[d].e);
-                    const diff = netto - 480;
-                    cumulativeBalance += diff;
+                    cumulativeBalance += (netto - 480);
                     
-                    // Csak az aktuális hónap ledolgozott óráit is összeadjuk
+                    // A "Havi munka" továbbra is a teljes hónapot mutassa (vagy ha zavaró, ezt is korlátozhatjuk)
                     if (m === currentM) {
                         monthlyWork += netto;
                     }
@@ -220,6 +226,9 @@
         const bEl = document.getElementById('tBal');
         bEl.innerText = (cumulativeBalance < 0 ? '-' : '+') + `${Math.floor(Math.abs(cumulativeBalance)/60)}ó ${Math.abs(cumulativeBalance)%60}p`;
         bEl.style.color = cumulativeBalance < 0 ? '#ffb3b3' : '#b3ffcc';
+        
+        // Frissítjük a címkét, hogy egyértelmű legyen mire vonatkozik az egyenleg
+        document.getElementById('balLabel').innerText = `Egyenleg (${months[currentM]} ${currentDay}-ig)`;
     }
 
     function handleFocus(id, def) {
@@ -231,4 +240,3 @@
 </script>
 </body>
 </html>
-
