@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Munkaidő Naptár v16.4 - Szelektív Ünnepek</title>
+    <title>Munkaidő Naptár v16.5</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -30,7 +30,7 @@
         
         .stats { display: flex; justify-content: space-around; background: var(--p); color: white; padding: 18px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,86,145,0.3); }
         .stat-val { display: block; font-weight: 800; font-size: 1.2rem; margin-top: 4px; }
-        .stats small { opacity: 0.8; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stats small { opacity: 0.8; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; transition: 0.3s; }
 
         .calendar-card { background: var(--card); padding: 18px; border-radius: 24px; box-shadow: var(--shadow); }
         .weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-weight: bold; font-size: 0.7rem; color: #888; margin-bottom: 12px; }
@@ -125,12 +125,19 @@
 <div id="captureArea"></div>
 
 <script>
-    // Téma betöltése azonnal
     const savedTheme = localStorage.getItem('theme') || 'light';
     document.body.setAttribute('data-theme', savedTheme);
     document.getElementById('tBtn').innerText = savedTheme === 'dark' ? '☀️' : '🌙';
 
     const months = ["Január","Február","Március","Április","Május","Június","Július","Augusztus","Szeptember","Október","November","December"];
+    
+    // Ünnepnapok nevei a kijelzéshez
+    const holidayNames = {
+        "0-1": "Újév", "2-15": "Március 15.", "4-1": "Munka ünnepe", "7-20": "Államalapítás",
+        "9-23": "1956-os forradalom", "10-1": "Mindenszentek", "11-25": "Karácsony", "11-26": "Karácsony",
+        "2026-3-3": "Húsvéthétfő", "2026-4-25": "Pünkösdhétfő"
+    };
+
     const fixedHolidays = ["0-1", "2-15", "4-1", "7-20", "9-23", "10-1", "11-25", "11-26"];
     const variableHolidays = {
         "2024": ["2-29", "3-1", "4-20"], "2025": ["3-18", "3-21", "5-9"],
@@ -157,13 +164,6 @@
         if(i === new Date().getMonth()) opt.selected = true;
         mSel.appendChild(opt);
     });
-
-    function toggleTheme() {
-        const nt = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-        document.body.setAttribute('data-theme', nt);
-        document.getElementById('tBtn').innerText = nt === 'dark' ? '☀️' : '🌙';
-        localStorage.setItem('theme', nt);
-    }
 
     function isHoliday(y, m, d) {
         const key = `${m}-${d}`;
@@ -259,6 +259,13 @@
     function calculateTotals() {
         const targetY = parseInt(ySel.value), targetM = parseInt(mSel.value);
         let cumulativeBalance = 0, monthlyWork = 0;
+        
+        // Ünnepnap ellenőrzése a fejléc számára
+        const holKey = `${targetM}-${currentDay}`;
+        const varHolKey = `${targetY}-${targetM}-${currentDay}`;
+        const holidayName = holidayNames[varHolKey] || holidayNames[holKey];
+        const balLabel = document.getElementById('balLabel');
+
         for (let m = 0; m <= targetM; m++) {
             const saved = JSON.parse(localStorage.getItem(`work_${targetY}_${m}`)) || {};
             for (let d in saved) {
@@ -271,10 +278,27 @@
                 }
             }
         }
+        
         document.getElementById('tWork').innerText = `${Math.floor(monthlyWork/60)}ó ${monthlyWork%60}p`;
         const bEl = document.getElementById('tBal');
-        bEl.innerText = (cumulativeBalance < 0 ? '-' : '+') + `${Math.floor(Math.abs(cumulativeBalance)/60)}ó ${Math.abs(cumulativeBalance)%60}p`;
+        
+        if (holidayName && isHoliday(targetY, targetM, currentDay)) {
+            balLabel.innerText = holidayName;
+            balLabel.style.color = "#ffb3b3";
+            bEl.innerText = "ÜNNEP";
+        } else {
+            balLabel.innerText = "Egyenleg";
+            balLabel.style.color = "white";
+            bEl.innerText = (cumulativeBalance < 0 ? '-' : '+') + `${Math.floor(Math.abs(cumulativeBalance)/60)}ó ${Math.abs(cumulativeBalance)%60}p`;
+        }
         bEl.style.color = cumulativeBalance < 0 ? '#ffb3b3' : '#b3ffcc';
+    }
+
+    function toggleTheme() {
+        const nt = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        document.body.setAttribute('data-theme', nt);
+        document.getElementById('tBtn').innerText = nt === 'dark' ? '☀️' : '🌙';
+        localStorage.setItem('theme', nt);
     }
 
     function captureMonth() {
@@ -282,15 +306,13 @@
         const saved = JSON.parse(localStorage.getItem(`work_${y}_${m}`)) || {};
         const captureArea = document.getElementById('captureArea');
         let monthlyWork = 0, bal = 0, rows = '';
-
         const daysInMonth = new Date(y, parseInt(m) + 1, 0).getDate();
         
         for(let d=1; d<=daysInMonth; d++) {
             const data = saved[d] || {};
             const hol = isHoliday(y, m, d);
-            const dayOfWeek = new Date(y, m, d).getDay(); // 0=Vasárnap, 6=Szombat
+            const dayOfWeek = new Date(y, m, d).getDay();
             const isWeekdayHoliday = hol && dayOfWeek !== 0 && dayOfWeek !== 6;
-            
             const rowStyle = isWeekdayHoliday ? 'style="background:#ffecec;"' : '';
             
             if(data.s && data.e) {
@@ -321,7 +343,7 @@
         
         html2canvas(captureArea, { scale: 2 }).then(canvas => {
             const link = document.createElement('a');
-            link.download = `Munkaidő_${y}_${months[m]}.png`;
+            link.download = `Munkaido_${y}_${months[m]}.png`;
             link.href = canvas.toDataURL("image/png");
             link.click();
         });
