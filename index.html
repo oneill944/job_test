@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Munkaidő Naptár v16.2 - Téma mentése</title>
+    <title>Munkaidő Naptár v16.3 - Ünnepnap a mentésben</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -96,11 +96,11 @@
         <div id="daysGrid" class="days"></div>
         
         <div class="legend">
-            <div class="legend-item"><span class="dot" style="background:var(--less)"></span> Kevesebb mint 8 óra</div>
+            <div class="legend-item"><span class="dot" style="background:var(--less)"></span> Kevesebb mint 8ó</div>
             <div class="legend-item"><span class="dot" style="background:var(--vac)"></span> Szabadság</div>
-            <div class="legend-item"><span class="dot" style="background:var(--ok)"></span> Pontosan 8 óra</div>
+            <div class="legend-item"><span class="dot" style="background:var(--ok)"></span> Pontosan 8ó</div>
             <div class="legend-item"><span class="dot" style="background:var(--sick)"></span> Táppénz</div>
-            <div class="legend-item"><span class="dot" style="background:var(--more)"></span> Több mint 8 óra</div>
+            <div class="legend-item"><span class="dot" style="background:var(--more)"></span> Több mint 8ó</div>
             <div class="legend-item"><span class="dot dot-holiday"></span> Ünnepnap</div>
         </div>
         
@@ -126,7 +126,6 @@
 <div id="captureArea"></div>
 
 <script>
-    // Téma inicializálása a legelső lépésben
     const savedTheme = localStorage.getItem('theme') || 'light';
     document.body.setAttribute('data-theme', savedTheme);
     document.getElementById('tBtn').innerText = savedTheme === 'dark' ? '☀️' : '🌙';
@@ -143,7 +142,6 @@
     let currentDay = new Date().getDate();
     let currentYear = new Date().getFullYear();
 
-    // Év és hónap választók feltöltése
     const ySel = document.getElementById('ySel');
     for(let y=2024; y<=2030; y++) {
         const opt = document.createElement('option');
@@ -161,11 +159,10 @@
     });
 
     function toggleTheme() {
-        const currentTheme = document.body.getAttribute('data-theme');
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        document.body.setAttribute('data-theme', newTheme);
-        document.getElementById('tBtn').innerText = newTheme === 'dark' ? '☀️' : '🌙';
-        localStorage.setItem('theme', newTheme); // Mentés
+        const nt = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        document.body.setAttribute('data-theme', nt);
+        document.getElementById('tBtn').innerText = nt === 'dark' ? '☀️' : '🌙';
+        localStorage.setItem('theme', nt);
     }
 
     function isHoliday(y, m, d) {
@@ -174,12 +171,10 @@
     }
 
     function renderCalendar() {
-        const y = parseInt(ySel.value);
-        const m = parseInt(mSel.value);
+        const y = parseInt(ySel.value), m = parseInt(mSel.value);
         const daysGrid = document.getElementById('daysGrid');
         daysGrid.innerHTML = '';
-        const firstDay = new Date(y, m, 1).getDay();
-        const shift = firstDay === 0 ? 6 : firstDay - 1;
+        const shift = (new Date(y, m, 1).getDay() || 7) - 1;
         const daysInMonth = new Date(y, m + 1, 0).getDate();
         const saved = JSON.parse(localStorage.getItem(`work_${y}_${m}`)) || {};
 
@@ -191,9 +186,7 @@
 
         for (let i = 1; i <= daysInMonth; i++) {
             const div = document.createElement('div');
-            div.className = 'day';
-            div.id = `day-${i}`;
-            div.innerText = i;
+            div.className = 'day'; div.id = `day-${i}`; div.innerText = i;
             div.onclick = () => selectDay(i);
             if(isHoliday(y, m, i)) div.classList.add('holiday');
             const data = saved[i];
@@ -210,22 +203,18 @@
             if (i === currentDay) div.classList.add('selected');
             daysGrid.appendChild(div);
         }
-        loadDayData();
-        calculateTotals();
+        loadDayData(); calculateTotals();
     }
 
     function selectDay(d) {
         currentDay = d;
         document.querySelectorAll('.day').forEach(el => el.classList.remove('selected'));
-        const el = document.getElementById(`day-${d}`);
-        if(el) el.classList.add('selected');
-        loadDayData();
-        calculateTotals();
+        if(document.getElementById(`day-${d}`)) document.getElementById(`day-${d}`).classList.add('selected');
+        loadDayData(); calculateTotals();
     }
 
     function loadDayData() {
-        const y = ySel.value;
-        const m = mSel.value;
+        const y = ySel.value, m = mSel.value;
         const saved = JSON.parse(localStorage.getItem(`work_${y}_${m}`)) || {};
         const data = saved[currentDay] || {s:'', e:'', isVac: false, isSick: false};
         document.getElementById('sTime').value = data.s || '';
@@ -244,13 +233,9 @@
     }
 
     function updateCurrent() {
-        const s = document.getElementById('sTime').value;
-        const e = document.getElementById('eTime').value;
-        const disp = document.getElementById('dNet');
-        if (s && e) {
-            const netto = calcNetto(s, e);
-            disp.innerText = `${Math.floor(netto/60)}ó ${netto%60}p`;
-        } else disp.innerText = "0ó 0p";
+        const s = document.getElementById('sTime').value, e = document.getElementById('eTime').value;
+        const netto = calcNetto(s, e);
+        document.getElementById('dNet').innerText = s && e ? `${Math.floor(netto/60)}ó ${netto%60}p` : "0ó 0p";
     }
 
     function setSpecial(type) {
@@ -260,24 +245,20 @@
     }
 
     function saveData(isVac = false, isSick = false) {
-        const y = ySel.value;
-        const m = mSel.value;
+        const y = ySel.value, m = mSel.value;
         const saved = JSON.parse(localStorage.getItem(`work_${y}_${m}`)) || {};
         saved[currentDay] = { 
             s: document.getElementById('sTime').value, 
             e: document.getElementById('eTime').value,
-            isVac: isVac,
-            isSick: isSick
+            isVac: isVac, isSick: isSick
         };
         localStorage.setItem(`work_${y}_${m}`, JSON.stringify(saved));
         renderCalendar();
     }
 
     function calculateTotals() {
-        const targetY = parseInt(ySel.value);
-        const targetM = parseInt(mSel.value);
-        let cumulativeBalance = 0;
-        let monthlyWork = 0;
+        const targetY = parseInt(ySel.value), targetM = parseInt(mSel.value);
+        let cumulativeBalance = 0, monthlyWork = 0;
         for (let m = 0; m <= targetM; m++) {
             const saved = JSON.parse(localStorage.getItem(`work_${targetY}_${m}`)) || {};
             for (let d in saved) {
@@ -297,24 +278,30 @@
     }
 
     function captureMonth() {
-        const y = ySel.value;
-        const m = mSel.value;
+        const y = ySel.value, m = mSel.value;
         const saved = JSON.parse(localStorage.getItem(`work_${y}_${m}`)) || {};
         const captureArea = document.getElementById('captureArea');
-        let monthlyWork = 0;
-        let bal = 0;
-        let rows = '';
-        const sorted = Object.keys(saved).map(Number).sort((a,b) => a-b);
-        sorted.forEach(d => {
-            const data = saved[d];
+        let monthlyWork = 0, bal = 0, rows = '';
+
+        const daysInMonth = new Date(y, parseInt(m) + 1, 0).getDate();
+        
+        for(let d=1; d<=daysInMonth; d++) {
+            const data = saved[d] || {};
+            const hol = isHoliday(y, m, d);
+            const rowStyle = hol ? 'style="background:#ffecec;"' : '';
+            
             if(data.s && data.e) {
                 const netto = calcNetto(data.s, data.e);
                 bal += (netto - 480);
                 monthlyWork += netto;
                 let st = data.isVac ? 'SZABI' : (data.isSick ? 'TÁPPÉNZ' : (netto > 480 ? '+' : (netto < 480 ? '-' : 'OK')));
-                rows += `<tr><td>${d}.</td><td>${data.s}</td><td>${data.e}</td><td>${Math.floor(netto/60)}ó ${netto%60}p</td><td>${st}</td></tr>`;
+                if(hol) st += ' / ÜNNEP';
+                rows += `<tr ${rowStyle}><td>${d}.</td><td>${data.s}</td><td>${data.e}</td><td>${Math.floor(netto/60)}ó ${netto%60}p</td><td>${st}</td></tr>`;
+            } else if(hol) {
+                rows += `<tr ${rowStyle}><td>${d}.</td><td colspan="3">---</td><td>ÜNNEP</td></tr>`;
             }
-        });
+        }
+
         captureArea.innerHTML = `
             <div style="text-align:center; border-bottom:2px solid #005691; padding-bottom:10px;">
                 <h2 style="margin:0; color:#005691;">${y}. ${months[m]}</h2>
@@ -328,11 +315,11 @@
                 ${rows}
             </table>
         `;
+        
         html2canvas(captureArea, { scale: 2 }).then(canvas => {
             const link = document.createElement('a');
             link.download = `munka_${y}_${months[m]}.png`;
-            link.href = canvas.toDataURL();
-            link.click();
+            link.href = canvas.toDataURL(); link.click();
         });
     }
 
