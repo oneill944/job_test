@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Munkaidő Naptár v17.2</title>
+    <title>Munkaidő Naptár v17.3 - Új Ünnep Jelölés</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -28,10 +28,14 @@
         .sel-box { padding: 10px; border-radius: 12px; border: 1px solid var(--border); font-size: 1rem; font-weight: bold; background: var(--card); color: var(--text); cursor: pointer; }
         .theme-toggle { background: none; border: none; font-size: 1.5rem; cursor: pointer; padding: 5px; line-height: 1; }
         
-        .stats { display: flex; justify-content: space-around; background: var(--p); color: white; padding: 15px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,86,145,0.3); min-height: 60px; align-items: center; }
-        .stat-item { text-align: center; flex: 1; }
-        .stat-val { display: block; font-weight: 800; font-size: 1.1rem; margin-top: 2px; }
+        /* MÓDOSÍTOTT: Kék kocka stílus a dupla sorhoz */
+        .stats { display: flex; justify-content: space-around; background: var(--p); color: white; padding: 15px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,86,145,0.3); min-height: 70px; align-items: flex-start; }
+        .stat-item { text-align: center; flex: 1; display: flex; flex-direction: column; align-items: center; }
+        .stat-val { display: block; font-weight: 800; font-size: 1.1rem; margin-top: auto; }
         .stats small { opacity: 0.9; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px; display: block; line-height: 1.2; }
+
+        /* ÚJ: Teli piros ünnep jelölő a kék kockában */
+        .holiday-badge { background: #ff4d4d; color: black; font-weight: 900; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; text-transform: uppercase; margin: 3px 0; display: none; }
 
         .calendar-card { background: var(--card); padding: 18px; border-radius: 24px; box-shadow: var(--shadow); }
         .weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-weight: bold; font-size: 0.7rem; color: #888; margin-bottom: 12px; }
@@ -58,10 +62,8 @@
         .dot-holiday::after { top: -4px; right: -6px; font-size: 0.45rem; }
 
         .editor-card { background: var(--card); padding: 22px; border-radius: 24px; box-shadow: var(--shadow); margin-top: 15px; text-align: center; }
-        .date-label { font-size: 1.3rem; font-weight: 800; color: var(--p); margin-bottom: 5px; display: block; }
+        .date-label { font-size: 1.3rem; font-weight: 800; color: var(--p); margin-bottom: 18px; display: block; }
         
-        .holiday-info { color: var(--holiday); font-weight: bold; border: 2px solid var(--holiday); border-radius: 10px; padding: 5px; margin-bottom: 15px; display: none; font-size: 0.9rem; }
-
         input[type="time"] { padding: 12px; border-radius: 14px; border: 2px solid var(--border); font-size: 1.1rem; background: var(--card); color: var(--text); text-align: center; width: 110px; }
         .daily-res { margin: 15px 0; font-size: 1.4rem; font-weight: 800; color: var(--p); }
         
@@ -93,6 +95,7 @@
             </div>
             <div class="stat-item">
                 <small id="balLabel">Egyenleg</small>
+                <div id="holBadge" class="holiday-badge">ÜNNEP</div>
                 <span id="tBal" class="stat-val">0ó 0p</span>
             </div>
         </div>
@@ -118,7 +121,6 @@
 
     <div class="editor-card">
         <span id="selectedDateText" class="date-label">-</span>
-        <div id="holBox" class="holiday-info"></div>
         <div style="display:flex; justify-content:center; gap:10px; align-items:center;">
             <input type="time" id="sTime" onfocus="handleFocus('sTime', '05:50')" oninput="updateCurrent()">
             <span>-</span>
@@ -145,11 +147,17 @@
     const holidayNames = {
         "0-1": "Újév", "2-15": "Március 15.", "4-1": "Munka ünnepe", "7-20": "Államalapítás",
         "9-23": "1956-os forradalom", "10-1": "Mindenszentek", "11-25": "Karácsony", "11-26": "Karácsony",
+        // Javított 2026-os dátumok
         "2026-3-3": "Nagypéntek", "2026-3-6": "Húsvéthétfő", "2026-4-25": "Pünkösdhétfő"
     };
 
     const fixedHolidays = ["0-1", "2-15", "4-1", "7-20", "9-23", "10-1", "11-25", "11-26"];
-    const variableHolidays = { "2026": ["3-3", "3-6", "4-25"] };
+    const variableHolidays = {
+        "2024": ["2-29", "3-1", "4-20"], 
+        "2025": ["3-18", "3-21", "5-9"],
+        "2026": ["3-3", "3-6", "4-25"], 
+        "2027": ["2-26", "2-29", "4-17"]
+    };
 
     let currentDay = new Date().getDate();
     let currentYear = new Date().getFullYear();
@@ -225,19 +233,6 @@
         document.getElementById('sTime').value = data.s || '';
         document.getElementById('eTime').value = data.e || '';
         document.getElementById('selectedDateText').innerText = `${y}. ${months[m]} ${currentDay}.`;
-        
-        const holKey = `${m}-${currentDay}`;
-        const varHolKey = `${y}-${m}-${currentDay}`;
-        const holidayName = holidayNames[varHolKey] || holidayNames[holKey];
-        const holBox = document.getElementById('holBox');
-        
-        if (holidayName && isHoliday(y, m, currentDay)) {
-            holBox.innerText = holidayName;
-            holBox.style.display = 'block';
-        } else {
-            holBox.style.display = 'none';
-        }
-
         updateCurrent();
     }
 
@@ -277,7 +272,13 @@
     function calculateTotals() {
         const targetY = parseInt(ySel.value), targetM = parseInt(mSel.value);
         let cumulativeBalance = 0, monthlyWork = 0;
+        
+        // Ünnep keresése
+        const holKey = `${targetM}-${currentDay}`;
+        const varHolKey = `${targetY}-${targetM}-${currentDay}`;
+        const holidayName = holidayNames[varHolKey] || holidayNames[holKey];
         const balLabel = document.getElementById('balLabel');
+        const holBadge = document.getElementById('holBadge');
 
         for (let m = 0; m <= targetM; m++) {
             const saved = JSON.parse(localStorage.getItem(`work_${targetY}_${m}`)) || {};
@@ -295,7 +296,16 @@
         document.getElementById('tWork').innerText = `${Math.floor(monthlyWork/60)}ó ${monthlyWork%60}p`;
         const bEl = document.getElementById('tBal');
         
+        // Dinamikus felirat az egyenlegnél
         balLabel.innerText = `Egyenleg (${months[targetM]} ${currentDay}-ig)`;
+        
+        // MÓDOSÍTOTT: Ünnep kocka kijelzése a kék sávban
+        if (holidayName && isHoliday(targetY, targetM, currentDay)) {
+            holBadge.innerText = holidayName;
+            holBadge.style.display = 'block';
+        } else {
+            holBadge.style.display = 'none';
+        }
         
         bEl.innerText = (cumulativeBalance < 0 ? '-' : '+') + `${Math.floor(Math.abs(cumulativeBalance)/60)}ó ${Math.abs(cumulativeBalance)%60}p`;
         bEl.style.color = cumulativeBalance < 0 ? '#ffb3b3' : '#b3ffcc';
@@ -321,15 +331,20 @@
             const holKey = `${m}-${d}`;
             const varHolKey = `${y}-${m}-${d}`;
             const holidayName = holidayNames[varHolKey] || holidayNames[holKey];
-            const dayOfWeek = new Date(y, m, d).getDay();
+            const dayOfWeek = new Date(y, m, d).getDay(); // 0: Vasárnap, 6: Szombat
             
             if(data.s && data.e) {
                 const netto = calcNetto(data.s, data.e);
                 bal += (netto - 480);
                 monthlyWork += netto;
                 let st = data.isVac ? 'SZABI' : (data.isSick ? 'TÁPPÉNZ' : (netto > 480 ? '+' : (netto < 480 ? '-' : 'OK')));
+                
+                // MÓDOSÍTOTT: PNG mentésnél is a pontos ünnepnév jelenik meg
+                if(hol && dayOfWeek !== 0 && dayOfWeek !== 6) st += ` / ${holidayName || 'ÜNNEP'}`;
+                
                 rows += `<tr><td>${d}.</td><td>${data.s}</td><td>${data.e}</td><td>${Math.floor(netto/60)}ó ${netto%60}p</td><td>${st}</td></tr>`;
             } else if(hol && dayOfWeek !== 0 && dayOfWeek !== 6) {
+                // Hétköznapi ünnep adatok nélkül
                 rows += `<tr style="background:#ffecec;"><td>${d}.</td><td colspan="3">---</td><td>${holidayName || 'ÜNNEP'}</td></tr>`;
             }
         }
