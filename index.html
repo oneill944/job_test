@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Munkaidő Naptár v19.0 - Túlóra Mod</title>
+    <title>Munkaidő Naptár v19.1 - Túlóra Fix</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -135,7 +135,7 @@
             <div class="legend-item"><span class="dot" style="background:var(--ok)"></span> Pontosan 8 óra</div>
             <div class="legend-item"><span class="dot" style="background:var(--sick)"></span> Táppénz</div>
             <div class="legend-item"><span class="dot" style="background:var(--more)"></span> Több mint 8 óra</div>
-            <div class="legend-item"><span class="dot" style="background:var(--overtime)"></span> Túlóra (Hétvége)</div>
+            <div class="legend-item"><span class="dot" style="background:var(--overtime)"></span> Túlóra (Lila)</div>
             <div class="legend-item"><span class="dot dot-holiday"></span> Ünnepnap</div>
         </div>
         <button class="action-btn btn-capture" onclick="captureMonth()">📷 HÓNAP MENTÉSE KÉPKÉNT</button>
@@ -259,14 +259,9 @@
         document.getElementById('eTime').value = data.e || '';
         document.getElementById('selectedDateText').innerText = `${y}. ${months[m]} ${currentDay}.`;
         
-        // Hétvége ellenőrzése a gomb megjelenítéséhez
         const dayOfWeek = new Date(y, m, currentDay).getDay();
         const otBtn = document.getElementById('otBtn');
-        if (dayOfWeek === 0 || dayOfWeek === 6) {
-            otBtn.style.display = 'block';
-        } else {
-            otBtn.style.display = 'none';
-        }
+        otBtn.style.display = (dayOfWeek === 0 || dayOfWeek === 6) ? 'block' : 'none';
 
         updateCurrent();
     }
@@ -317,12 +312,10 @@
                 const data = saved[d];
                 if (data.s && data.e) {
                     const netto = calcNetto(data.s, data.e);
-                    // Hétköznapokon 8 órához viszonyítunk, hétvégén minden perc plusz
-                    const dayOfWeek = new Date(targetY, m, parseInt(d)).getDay();
-                    const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
                     
-                    if (isWeekend || data.isOT) {
-                        cumulativeBalance += netto;
+                    // Ha TÚLÓRA gombbal lett mentve, beleszámít a munkaidőbe, de az egyenleghez 0-át ad hozzá
+                    if (data.isOT) {
+                        cumulativeBalance += 0; 
                     } else {
                         cumulativeBalance += (netto - 480);
                     }
@@ -361,7 +354,7 @@
 
             if(data.s && data.e) {
                 const netto = calcNetto(data.s, data.e);
-                if (isWeekend || data.isOT) bal += netto; else bal += (netto - 480);
+                if (data.isOT) bal += 0; else bal += (netto - 480);
                 monthlyWork += netto;
                 
                 let st = data.isVac ? 'SZABI' : (data.isSick ? 'TÁPPÉNZ' : (data.isOT ? 'TÚLÓRA' : (netto > 480 ? '+' : (netto < 480 ? '-' : 'OK'))));
