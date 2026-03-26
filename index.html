@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Munkaidő Naptár v20.0</title>
+    <title>Munkaidő Naptár v21.0</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -100,8 +100,8 @@
         .btn-vac { background: var(--vac); color: white; }
         .btn-sick { background: var(--sick); color: #333; }
         .btn-del { background: var(--del); color: black; }
-        .btn-ot { background: var(--overtime); color: white; }
         .btn-extra { background: var(--extra); color: white; }
+        .btn-ot { background: var(--overtime); color: white; grid-column: span 2; margin-top: 5px; display: none; }
         
         .btn-capture { background: #333; color: white; width: 100%; margin-top: 15px; grid-column: span 2; font-size: 0.8rem; }
         #captureArea { position: absolute; left: -9999px; top: -9999px; width: 420px; padding: 20px; background: white; color: black; }
@@ -143,7 +143,7 @@
             <div class="legend-item"><span class="dot" style="background:var(--sick)"></span> Táppénz</div>
             <div class="legend-item"><span class="dot" style="background:var(--more)"></span> Több mint 8 óra</div>
             <div class="legend-item"><span class="dot" style="background:var(--overtime)"></span> Túlóra</div>
-            <div class="legend-item"><span class="dot" style="background:var(--extra)"></span> Csúszó (-8ó egyenleg)</div>
+            <div class="legend-item"><span class="dot" style="background:var(--extra)"></span> Csúszó</div>
             <div class="legend-item"><span class="dot dot-holiday"></span> Ünnepnap 🇭🇺</div>
         </div>
         <button class="action-btn btn-capture" onclick="captureMonth()">📷 HÓNAP MENTÉSE KÉPKÉNT</button>
@@ -161,8 +161,8 @@
             <button class="action-btn btn-vac" onclick="setSpecial('vac')">SZABADSÁG</button>
             <button class="action-btn btn-sick" onclick="setSpecial('sick')">TÁPPÉNZ</button>
             <button class="action-btn btn-del" onclick="deleteDay()">TÖRLÉS</button>
+            <button class="action-btn btn-extra" onclick="setSpecial('extra')">CSÚSZÓ</button>
             <button id="otBtn" class="action-btn btn-ot" onclick="setSpecial('ot')">TÚLÓRA</button>
-            <button id="extraBtn" class="action-btn btn-extra" onclick="setSpecial('extra')">CSÚSZÓ</button>
             <button class="action-btn btn-save" onclick="saveData()">MENTÉS</button>
         </div>
     </div>
@@ -273,7 +273,6 @@
         const dayOfWeek = new Date(y, m, currentDay).getDay();
         const otBtn = document.getElementById('otBtn');
 
-        // Túlóra csak hétvégén látszik, de a Csúszó és a többi gomb mindig
         if (dayOfWeek === 0 || dayOfWeek === 6) {
             otBtn.style.display = 'block';
         } else {
