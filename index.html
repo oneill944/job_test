@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Munkaidő Naptár v18.0 (2030-ig)</title>
+    <title>Munkaidő Naptár v19.0 - Túlóra Mod</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -11,7 +11,7 @@
         :root { 
             --p: #005691; --bg: #f4f7f9; --card: #ffffff; --text: #333; --border: #eee;
             --ok: #28a745; --less: #dc3545; --more: #fd7e14; --vac: #007bff;
-            --sick: #f1c40f; --holiday: #ff4d4d;
+            --sick: #f1c40f; --holiday: #ff4d4d; --overtime: #9b59b6;
             --shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
         [data-theme="dark"] {
@@ -78,6 +78,7 @@
         .status-more { background: var(--more) !important; color: white; border: none; }
         .status-vac { background: var(--vac) !important; color: white; border: none; }
         .status-sick { background: var(--sick) !important; color: #333; border: none; }
+        .status-ot { background: var(--overtime) !important; color: white; border: none; }
 
         .legend { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 20px; padding: 15px 5px 5px 5px; border-top: 1px solid var(--border); }
         .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.7rem; color: #888; font-weight: 600; }
@@ -94,6 +95,7 @@
         .btn-save { background: var(--p); color: white; grid-column: span 2; margin-top: 5px; padding: 18px; }
         .btn-vac { background: var(--vac); color: white; }
         .btn-sick { background: var(--sick); color: #333; }
+        .btn-ot { background: var(--overtime); color: white; grid-column: span 2; display: none; margin-top: 5px; }
         .btn-capture { background: #333; color: white; width: 100%; margin-top: 15px; grid-column: span 2; font-size: 0.8rem; }
         #captureArea { position: absolute; left: -9999px; top: -9999px; width: 420px; padding: 20px; background: white; color: black; }
         #captureArea table { width: 100%; border-collapse: collapse; margin-top: 15px; }
@@ -133,6 +135,7 @@
             <div class="legend-item"><span class="dot" style="background:var(--ok)"></span> Pontosan 8 óra</div>
             <div class="legend-item"><span class="dot" style="background:var(--sick)"></span> Táppénz</div>
             <div class="legend-item"><span class="dot" style="background:var(--more)"></span> Több mint 8 óra</div>
+            <div class="legend-item"><span class="dot" style="background:var(--overtime)"></span> Túlóra (Hétvége)</div>
             <div class="legend-item"><span class="dot dot-holiday"></span> Ünnepnap</div>
         </div>
         <button class="action-btn btn-capture" onclick="captureMonth()">📷 HÓNAP MENTÉSE KÉPKÉNT</button>
@@ -149,6 +152,7 @@
         <div class="btn-group">
             <button class="action-btn btn-vac" onclick="setSpecial('vac')">SZABADSÁG</button>
             <button class="action-btn btn-sick" onclick="setSpecial('sick')">TÁPPÉNZ</button>
+            <button id="otBtn" class="action-btn btn-ot" onclick="setSpecial('ot')">TÚLÓRA (HÉTVÉGE)</button>
             <button class="action-btn btn-save" onclick="saveData()">MENTÉS</button>
         </div>
     </div>
@@ -222,9 +226,10 @@
             div.onclick = () => selectDay(i);
             if(isHoliday(y, m, i)) div.classList.add('holiday');
             const data = saved[i];
-            if (data && (data.s || data.isVac || data.isSick)) {
+            if (data && (data.s || data.isVac || data.isSick || data.isOT)) {
                 if (data.isVac) div.classList.add('status-vac');
                 else if (data.isSick) div.classList.add('status-sick');
+                else if (data.isOT) div.classList.add('status-ot');
                 else {
                     const netto = calcNetto(data.s, data.e);
                     if (netto === 480) div.classList.add('status-ok');
@@ -246,12 +251,23 @@
     }
 
     function loadDayData() {
-        const y = ySel.value, m = mSel.value;
+        const y = parseInt(ySel.value), m = parseInt(mSel.value);
         const saved = JSON.parse(localStorage.getItem(`work_${y}_${m}`)) || {};
-        const data = saved[currentDay] || {s:'', e:'', isVac: false, isSick: false};
+        const data = saved[currentDay] || {s:'', e:'', isVac: false, isSick: false, isOT: false};
+        
         document.getElementById('sTime').value = data.s || '';
         document.getElementById('eTime').value = data.e || '';
         document.getElementById('selectedDateText').innerText = `${y}. ${months[m]} ${currentDay}.`;
+        
+        // Hétvége ellenőrzése a gomb megjelenítéséhez
+        const dayOfWeek = new Date(y, m, currentDay).getDay();
+        const otBtn = document.getElementById('otBtn');
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+            otBtn.style.display = 'block';
+        } else {
+            otBtn.style.display = 'none';
+        }
+
         updateCurrent();
     }
 
@@ -273,16 +289,16 @@
     function setSpecial(type) {
         document.getElementById('sTime').value = "05:50";
         document.getElementById('eTime').value = "14:20";
-        saveData(type === 'vac', type === 'sick');
+        saveData(type === 'vac', type === 'sick', type === 'ot');
     }
 
-    function saveData(isVac = false, isSick = false) {
+    function saveData(isVac = false, isSick = false, isOT = false) {
         const y = ySel.value, m = mSel.value;
         const saved = JSON.parse(localStorage.getItem(`work_${y}_${m}`)) || {};
         saved[currentDay] = { 
             s: document.getElementById('sTime').value, 
             e: document.getElementById('eTime').value,
-            isVac: isVac, isSick: isSick
+            isVac: isVac, isSick: isSick, isOT: isOT
         };
         localStorage.setItem(`work_${y}_${m}`, JSON.stringify(saved));
         renderCalendar();
@@ -301,7 +317,16 @@
                 const data = saved[d];
                 if (data.s && data.e) {
                     const netto = calcNetto(data.s, data.e);
-                    cumulativeBalance += (netto - 480);
+                    // Hétköznapokon 8 órához viszonyítunk, hétvégén minden perc plusz
+                    const dayOfWeek = new Date(targetY, m, parseInt(d)).getDay();
+                    const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+                    
+                    if (isWeekend || data.isOT) {
+                        cumulativeBalance += netto;
+                    } else {
+                        cumulativeBalance += (netto - 480);
+                    }
+                    
                     if (m === targetM) monthlyWork += netto;
                 }
             }
@@ -332,13 +357,19 @@
             const data = saved[d] || {};
             const holName = isHoliday(y, m, d);
             const dayOfWeek = new Date(y, m, d).getDay();
+            const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+
             if(data.s && data.e) {
                 const netto = calcNetto(data.s, data.e);
-                bal += (netto - 480); monthlyWork += netto;
-                let st = data.isVac ? 'SZABI' : (data.isSick ? 'TÁPPÉNZ' : (netto > 480 ? '+' : (netto < 480 ? '-' : 'OK')));
-                if(holName && dayOfWeek !== 0 && dayOfWeek !== 6) st += ` / ${holName}`;
-                rows += `<tr><td>${d}.</td><td>${data.s}</td><td>${data.e}</td><td>${Math.floor(netto/60)}ó ${netto%60}p</td><td>${st}</td></tr>`;
-            } else if(holName && dayOfWeek !== 0 && dayOfWeek !== 6) {
+                if (isWeekend || data.isOT) bal += netto; else bal += (netto - 480);
+                monthlyWork += netto;
+                
+                let st = data.isVac ? 'SZABI' : (data.isSick ? 'TÁPPÉNZ' : (data.isOT ? 'TÚLÓRA' : (netto > 480 ? '+' : (netto < 480 ? '-' : 'OK'))));
+                if(holName && !isWeekend) st += ` / ${holName}`;
+                
+                let rowColor = data.isOT ? 'style="background:#f3e5f5;"' : '';
+                rows += `<tr ${rowColor}><td>${d}.</td><td>${data.s}</td><td>${data.e}</td><td>${Math.floor(netto/60)}ó ${netto%60}p</td><td>${st}</td></tr>`;
+            } else if(holName && !isWeekend) {
                 rows += `<tr style="background:#ffecec;"><td>${d}.</td><td colspan="3">---</td><td>${holName}</td></tr>`;
             }
         }
