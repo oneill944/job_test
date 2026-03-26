@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Munkaidő Naptár v16.7</title>
+    <title>Munkaidő Naptár v16.8</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -31,7 +31,7 @@
         .stats { display: flex; justify-content: space-around; background: var(--p); color: white; padding: 15px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,86,145,0.3); min-height: 60px; align-items: center; }
         .stat-item { text-align: center; flex: 1; }
         .stat-val { display: block; font-weight: 800; font-size: 1.1rem; margin-top: 2px; }
-        .stats small { opacity: 0.9; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px; display: block; min-height: 14px; line-height: 1.2; }
+        .stats small { opacity: 0.9; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px; display: block; line-height: 1.2; }
 
         .calendar-card { background: var(--card); padding: 18px; border-radius: 24px; box-shadow: var(--shadow); }
         .weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-weight: bold; font-size: 0.7rem; color: #888; margin-bottom: 12px; }
@@ -42,7 +42,8 @@
         .day.selected { border: 2.5px solid var(--p) !important; box-shadow: 0 0 10px rgba(0,86,145,0.4); z-index: 1; }
         
         .day.holiday { border: 2px solid var(--holiday) !important; color: var(--holiday); }
-        .day.holiday::after { content: '🇭🇺'; position: absolute; top: 2px; right: 2px; font-size: 0.5rem; }
+        .day.holiday::after, .dot-holiday::after { content: '🇭🇺'; position: absolute; font-size: 0.5rem; }
+        .day.holiday::after { top: 2px; right: 2px; }
 
         .status-ok { background: var(--ok) !important; color: white; border: none; }
         .status-less { background: var(--less) !important; color: white; border: none; }
@@ -52,7 +53,9 @@
 
         .legend { display: grid; grid-template-columns: 1.3fr 1fr; gap: 8px; margin-top: 20px; padding: 15px 5px 5px 5px; border-top: 1px solid var(--border); }
         .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.7rem; color: #888; font-weight: 600; }
-        .dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+        .dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; position: relative; }
+        .dot-holiday { border: 1.5px solid var(--holiday); background: transparent; }
+        .dot-holiday::after { top: -4px; right: -6px; font-size: 0.45rem; }
 
         .editor-card { background: var(--card); padding: 22px; border-radius: 24px; box-shadow: var(--shadow); margin-top: 15px; text-align: center; }
         .date-label { font-size: 1.3rem; font-weight: 800; color: var(--p); margin-bottom: 18px; display: block; }
@@ -105,7 +108,7 @@
             <div class="legend-item"><span class="dot" style="background:var(--ok)"></span> Pontos</div>
             <div class="legend-item"><span class="dot" style="background:var(--sick)"></span> Táppénz</div>
             <div class="legend-item"><span class="dot" style="background:var(--more)"></span> Több</div>
-            <div class="legend-item"><span class="dot" style="border:1.5px solid var(--holiday)"></span> Ünnepnap</div>
+            <div class="legend-item"><span class="dot dot-holiday"></span> Ünnepnap</div>
         </div>
         
         <button class="action-btn btn-capture" onclick="captureMonth()">📷 HÓNAP MENTÉSE KÉPKÉNT</button>
@@ -136,7 +139,6 @@
 
     const months = ["Január","Február","Március","Április","Május","Június","Július","Augusztus","Szeptember","Október","November","December"];
     
-    // Ünnepnapok nevei
     const holidayNames = {
         "0-1": "Újév", "2-15": "Március 15.", "4-1": "Munka ünnepe", "7-20": "Államalapítás",
         "9-23": "1956-os forradalom", "10-1": "Mindenszentek", "11-25": "Karácsony", "11-26": "Karácsony",
@@ -153,7 +155,6 @@
     let currentDay = new Date().getDate();
     let currentYear = new Date().getFullYear();
 
-    // Select feltöltés
     const ySel = document.getElementById('ySel');
     for(let y=2024; y<=2027; y++) {
         const opt = document.createElement('option');
@@ -265,7 +266,6 @@
         const targetY = parseInt(ySel.value), targetM = parseInt(mSel.value);
         let cumulativeBalance = 0, monthlyWork = 0;
         
-        // Ünnep keresése
         const holKey = `${targetM}-${currentDay}`;
         const varHolKey = `${targetY}-${targetM}-${currentDay}`;
         const holidayName = holidayNames[varHolKey] || holidayNames[holKey];
@@ -287,13 +287,10 @@
         document.getElementById('tWork').innerText = `${Math.floor(monthlyWork/60)}ó ${monthlyWork%60}p`;
         const bEl = document.getElementById('tBal');
         
-        // Ha ünnepnap van, kiírjuk a nevet ÉS az egyenleget is
         if (holidayName && isHoliday(targetY, targetM, currentDay)) {
             balLabel.innerText = holidayName;
-            balLabel.style.fontWeight = "bold";
         } else {
             balLabel.innerText = "Egyenleg";
-            balLabel.style.fontWeight = "normal";
         }
         
         bEl.innerText = (cumulativeBalance < 0 ? '-' : '+') + `${Math.floor(Math.abs(cumulativeBalance)/60)}ó ${Math.abs(cumulativeBalance)%60}p`;
@@ -319,7 +316,6 @@
             const hol = isHoliday(y, m, d);
             const dayOfWeek = new Date(y, m, d).getDay();
             const isWeekdayHoliday = hol && dayOfWeek !== 0 && dayOfWeek !== 6;
-            
             const holKey = `${m}-${d}`;
             const varHolKey = `${y}-${m}-${d}`;
             const holidayName = holidayNames[varHolKey] || holidayNames[holKey];
