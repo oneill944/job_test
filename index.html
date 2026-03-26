@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Munkaidő Naptár v13.3</title>
+    <title>Munkaidő Naptár v14 - Kép Mentéssel</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
     <style>
         :root { 
             --p: #005691; --bg: #f4f7f9; --card: #ffffff; --text: #333; --border: #eee;
@@ -16,11 +19,10 @@
         }
 
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; display: flex; justify-content: center; transition: 0.3s; }
-        .app { width: 100%; max-width: 450px; }
+        .app { width: 100%; max-width: 450px; padding-bottom: 20px; }
 
         .header { background: var(--card); padding: 20px; border-radius: 24px; box-shadow: var(--shadow); margin-bottom: 15px; }
         
-        /* ÚJ: Egy sorba rendezett fejléc elemek */
         .top-row { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
         .month-sel { flex-grow: 1; padding: 12px; border-radius: 14px; border: 1px solid var(--border); font-size: 1.1rem; font-weight: bold; color: var(--p); background: var(--card); color: var(--text); cursor: pointer; }
         .theme-toggle { background: none; border: none; font-size: 1.5rem; cursor: pointer; padding: 5px; line-height: 1; }
@@ -29,21 +31,20 @@
         .stat-val { display: block; font-weight: 800; font-size: 1.2rem; margin-top: 4px; }
         .stats small { opacity: 0.8; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        .calendar-grid { background: var(--card); padding: 18px; border-radius: 24px; box-shadow: var(--shadow); }
+        .calendar-card { background: var(--card); padding: 18px; border-radius: 24px; box-shadow: var(--shadow); }
         .weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-weight: bold; font-size: 0.7rem; color: #888; margin-bottom: 12px; }
         .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
         
-        .day { height: 52px; display: flex; align-items: center; justify-content: center; border-radius: 12px; cursor: pointer; font-weight: bold; border: 1px solid var(--border); transition: 0.15s; background: var(--card); }
+        .day { height: 52px; display: flex; align-items: center; justify-content: center; border-radius: 12px; cursor: pointer; font-weight: bold; border: 1px solid var(--border); transition: 0.15s; background: var(--card); position: relative; }
         .day:active { transform: scale(0.92); }
-        .day.empty { border: none; background: transparent; }
-        .day.selected { border: 2.5px solid var(--p) !important; box-shadow: 0 0 10px rgba(0,86,145,0.4); }
+        .day.empty { border: none; background: transparent; cursor: default; }
+        .day.selected { border: 2.5px solid var(--p) !important; box-shadow: 0 0 10px rgba(0,86,145,0.4); z-index: 1; }
         
         .status-ok { background: var(--ok) !important; color: white; border: none; }
         .status-less { background: var(--less) !important; color: white; border: none; }
         .status-more { background: var(--more) !important; color: white; border: none; }
         .status-vac { background: var(--vac) !important; color: white; border: none; }
 
-        /* Visszaállított teljes szöveges jelmagyarázat */
         .legend { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; padding: 15px 5px 5px 5px; border-top: 1px solid var(--border); }
         .legend-item { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: #888; }
         .dot { width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0; }
@@ -57,9 +58,24 @@
         .daily-res { margin: 15px 0; font-size: 1.4rem; font-weight: 800; color: var(--p); }
         
         .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        button.action-btn { padding: 16px; border-radius: 16px; font-weight: bold; cursor: pointer; border: none; transition: 0.2s; font-size: 0.95rem; font-family: inherit; }
+        button.action-btn { padding: 16px; border-radius: 16px; font-weight: bold; cursor: pointer; border: none; transition: 0.2s; font-size: 0.95rem; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-save { background: var(--p); color: white; }
         .btn-vac { background: var(--border); color: var(--text); }
+        
+        /* ÚJ: Gomb a kép generáláshoz */
+        .btn-capture { background: #333; color: white; width: 100%; margin-top: 15px; grid-column: span 2; }
+        [data-theme="dark"] .btn-capture { background: #555; }
+        
+        button.action-btn:active { transform: translateY(2px); }
+        
+        /* Rejtett terület a kép generáláshoz */
+        #captureArea { position: absolute; left: -9999px; top: -9999px; width: 400px; padding: 20px; background: white; color: black; border-radius: 15px; }
+        #captureArea table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        #captureArea th, #captureArea td { border: 1px solid #ccc; padding: 8px; text-align: center; font-size: 0.9rem; }
+        #captureArea th { background-color: #f0f0f0; }
+        .capture-header { text-align: center; margin-bottom: 15px; border-bottom: 2px solid var(--p); padding-bottom: 10px; }
+        .capture-stats { display: flex; justify-content: space-around; background-color: var(--p); color: white; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
+
     </style>
 </head>
 <body data-theme="light">
@@ -76,7 +92,7 @@
         </div>
     </div>
 
-    <div class="calendar-grid">
+    <div class="calendar-card">
         <div class="weekdays">
             <div>H</div><div>K</div><div>SZ</div><div>CS</div><div>P</div><div>SZ</div><div>V</div>
         </div>
@@ -88,6 +104,8 @@
             <div class="legend-item"><span class="dot" style="background:var(--more)"></span> Több mint 8 óra</div>
             <div class="legend-item"><span class="dot" style="background:var(--vac)"></span> Szabadság</div>
         </div>
+        
+        <button class="action-btn btn-capture" onclick="captureMonth()">📷 HÓNAP MENTÉSE KÉPKÉNT</button>
     </div>
 
     <div class="editor-card">
@@ -105,11 +123,14 @@
     </div>
 </div>
 
+<div id="captureArea"></div>
+
 <script>
     let currentDay = new Date().getDate();
     const months = ["Január","Február","Március","Április","Május","Június","Július","Augusztus","Szeptember","Október","November","December"];
     const year = 2026;
 
+    // Sötét mód kezelése
     if(localStorage.getItem('theme') === 'dark') {
         document.body.setAttribute('data-theme', 'dark');
         document.getElementById('tBtn').innerText = '☀️';
@@ -250,6 +271,89 @@
         bEl.innerText = (cumulativeBalance < 0 ? '-' : '+') + `${Math.floor(Math.abs(cumulativeBalance)/60)}ó ${Math.abs(cumulativeBalance)%60}p`;
         bEl.style.color = cumulativeBalance < 0 ? '#ffb3b3' : '#b3ffcc';
         document.getElementById('balLabel').innerText = `Egyenleg (${months[currentM]} ${currentDay}-ig)`;
+    }
+
+    // ÚJ: Kép generáló függvény
+    function captureMonth() {
+        const m = parseInt(mSel.value);
+        const saved = JSON.parse(localStorage.getItem(`work_v10_${m}`)) || {};
+        const captureArea = document.getElementById('captureArea');
+        
+        // 1. Összeállítjuk a rejtett HTML tartalmat a képhez
+        let html = `
+            <div class="capture-header">
+                <h2>${year}. ${months[m]}</h2>
+                <p>Munkaidő Kimutatás</p>
+            </div>
+        `;
+        
+        let mTotal = 0;
+        let mBalance = 0;
+        let tableRows = '';
+        
+        const days = Object.keys(saved).map(Number).sort((a, b) => a - b);
+        
+        if (days.length === 0) {
+            alert("Nincsenek adatok ebben a hónapban!");
+            return;
+        }
+
+        days.forEach(d => {
+            const data = saved[d];
+            const netto = calcNetto(data.s, data.e);
+            mTotal += netto;
+            mBalance += (netto - 480);
+            
+            tableRows += `<tr>
+                <td>${d}.</td>
+                <td>${data.s}</td>
+                <td>${data.e}</td>
+                <td>${Math.floor(netto/60)}ó ${netto%60}p</td>
+                <td>${data.isVac ? 'SZABI' : ''}</td>
+            </tr>`;
+        });
+        
+        html += `
+            <div class="capture-stats">
+                <div>Összesen: <b>${Math.floor(mTotal/60)}ó ${mTotal%60}p</b></div>
+                <div>Egyenleg: <b>${(mBalance < 0 ? '-' : '+')}${Math.floor(Math.abs(mBalance)/60)}ó ${Math.abs(mBalance)%60}p</b></div>
+            </div>
+            <table>
+                <tr><th>Nap</th><th>Kezdés</th><th>Vége</th><th>Netto</th><th>Megj.</th></tr>
+                ${tableRows}
+            </table>
+            <p style="text-align:center; font-size:0.7rem; color:#888; margin-top:15px;">Generálva: ${new Date().toLocaleString('hu-HU')}</p>
+        `;
+        
+        captureArea.innerHTML = html;
+        
+        // 2. Kép generálása a html2canvas-szal
+        html2canvas(captureArea, {
+            scale: 2, // Jobb minőség
+            backgroundColor: "#ffffff",
+            logging: false
+        }).then(canvas => {
+            // 3. A generált képet (base64) átalakítjuk fájllá (Blob)
+            canvas.toBlob(blob => {
+                const file = new File([blob], `work_report_${months[m]}.png`, { type: 'image/png' });
+                
+                // 4. Megnyitjuk a natív megosztási menüt (mobilon szuper)
+                if (navigator.share) {
+                    navigator.share({
+                        files: [file],
+                        title: `${months[m]}i munkaidő jelentés`,
+                        text: `Itt a ${year}. ${months[m]}i munkaidő kimutatásom.`
+                    }).catch(error => console.log('Hiba a megosztásnál:', error));
+                } else {
+                    // Ha a böngésző nem támogatja a megosztást (pl. asztali Chrome), letöltjük
+                    const link = document.createElement('a');
+                    link.download = `work_report_${months[m]}.png`;
+                    link.href = URL.createObjectURL(blob);
+                    link.click();
+                    alert("A megosztás nem támogatott ebben a böngészőben. A fájlt letöltöttük.");
+                }
+            }, 'image/png');
+        });
     }
 
     function handleFocus(id, def) {
