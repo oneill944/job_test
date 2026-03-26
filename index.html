@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Munkaidő Naptár v15 - Táppénz & Kép</title>
+    <title>Munkaidő Naptár v15.2 - Kétoszlopos Legend</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -11,7 +11,7 @@
         :root { 
             --p: #005691; --bg: #f4f7f9; --card: #ffffff; --text: #333; --border: #eee;
             --ok: #28a745; --less: #dc3545; --more: #fd7e14; --vac: #007bff;
-            --sick: #f1c40f; /* Citromsárga a táppénznek */
+            --sick: #f1c40f; 
             --shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
         [data-theme="dark"] {
@@ -23,7 +23,6 @@
         .app { width: 100%; max-width: 450px; padding-bottom: 20px; }
 
         .header { background: var(--card); padding: 20px; border-radius: 24px; box-shadow: var(--shadow); margin-bottom: 15px; }
-        
         .top-row { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
         .month-sel { flex-grow: 1; padding: 12px; border-radius: 14px; border: 1px solid var(--border); font-size: 1.1rem; font-weight: bold; color: var(--p); background: var(--card); color: var(--text); cursor: pointer; }
         .theme-toggle { background: none; border: none; font-size: 1.5rem; cursor: pointer; padding: 5px; line-height: 1; }
@@ -47,9 +46,17 @@
         .status-vac { background: var(--vac) !important; color: white; border: none; }
         .status-sick { background: var(--sick) !important; color: #333; border: none; }
 
-        .legend { display: flex; flex-direction: column; gap: 6px; margin-top: 20px; padding: 15px 5px 5px 5px; border-top: 1px solid var(--border); }
-        .legend-item { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; color: #888; font-weight: 600; }
-        .dot { width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0; }
+        /* ÚJ: Kétoszlopos jelmagyarázat stílus */
+        .legend { 
+            display: grid; 
+            grid-template-columns: 1.2fr 1fr; 
+            gap: 8px; 
+            margin-top: 20px; 
+            padding: 15px 5px 5px 5px; 
+            border-top: 1px solid var(--border); 
+        }
+        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: #888; font-weight: 600; }
+        .dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
 
         .editor-card { background: var(--card); padding: 22px; border-radius: 24px; box-shadow: var(--shadow); margin-top: 15px; text-align: center; }
         .date-label { font-size: 1.3rem; font-weight: 800; color: var(--p); margin-bottom: 18px; display: block; }
@@ -58,19 +65,13 @@
         input[type="time"] { padding: 12px; border-radius: 14px; border: 2px solid var(--border); font-size: 1.1rem; font-family: inherit; background: var(--card); color: var(--text); text-align: center; width: 110px; }
         
         .daily-res { margin: 15px 0; font-size: 1.4rem; font-weight: 800; color: var(--p); }
-        
         .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         button.action-btn { padding: 14px; border-radius: 16px; font-weight: bold; cursor: pointer; border: none; transition: 0.2s; font-size: 0.9rem; font-family: inherit; display: flex; align-items: center; justify-content: center; }
         .btn-save { background: var(--p); color: white; grid-column: span 2; margin-top: 5px; padding: 18px; }
         .btn-vac { background: var(--vac); color: white; }
         .btn-sick { background: var(--sick); color: #333; }
-        
         .btn-capture { background: #333; color: white; width: 100%; margin-top: 15px; grid-column: span 2; font-size: 0.85rem; }
-        [data-theme="dark"] .btn-capture { background: #555; }
-        
-        button.action-btn:active { transform: translateY(2px); opacity: 0.8; }
-        
-        /* Rejtett terület a képhez */
+
         #captureArea { position: absolute; left: -9999px; top: -9999px; width: 400px; padding: 20px; background: white; color: black; }
         #captureArea table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         #captureArea th, #captureArea td { border: 1px solid #ccc; padding: 8px; text-align: center; font-size: 0.85rem; }
@@ -98,11 +99,11 @@
         <div id="daysGrid" class="days"></div>
         
         <div class="legend">
-            <div class="legend-item"><span class="dot" style="background:var(--less)"></span> Kevesebb mint 8 óra</div>
-            <div class="legend-item"><span class="dot" style="background:var(--ok)"></span> Pontosan 8 óra</div>
-            <div class="legend-item"><span class="dot" style="background:var(--more)"></span> Több mint 8 óra</div>
+            <div class="legend-item"><span class="dot" style="background:var(--less)"></span> &lt; 8 óra</div>
             <div class="legend-item"><span class="dot" style="background:var(--vac)"></span> Szabadság</div>
+            <div class="legend-item"><span class="dot" style="background:var(--ok)"></span> 8 óra</div>
             <div class="legend-item"><span class="dot" style="background:var(--sick)"></span> Táppénz</div>
+            <div class="legend-item"><span class="dot" style="background:var(--more)"></span> &gt; 8 óra</div>
         </div>
         
         <button class="action-btn btn-capture" onclick="captureMonth()">📷 HÓNAP MENTÉSE KÉPKÉNT</button>
@@ -155,7 +156,6 @@
         const m = parseInt(mSel.value);
         const daysGrid = document.getElementById('daysGrid');
         daysGrid.innerHTML = '';
-
         const firstDay = new Date(year, m, 1).getDay();
         const shift = firstDay === 0 ? 6 : firstDay - 1;
         const daysInMonth = new Date(year, m + 1, 0).getDate();
@@ -173,9 +173,8 @@
             div.id = `day-${i}`;
             div.innerText = i;
             div.onclick = () => selectDay(i);
-
             const data = saved[i];
-            if (data && data.s && data.e) {
+            if (data && (data.s || data.isVac || data.isSick)) {
                 if (data.isVac) div.classList.add('status-vac');
                 else if (data.isSick) div.classList.add('status-sick');
                 else {
@@ -205,8 +204,8 @@
         const m = mSel.value;
         const saved = JSON.parse(localStorage.getItem(`work_v10_${m}`)) || {};
         const data = saved[currentDay] || {s:'', e:'', isVac: false, isSick: false};
-        document.getElementById('sTime').value = data.s;
-        document.getElementById('eTime').value = data.e;
+        document.getElementById('sTime').value = data.s || '';
+        document.getElementById('eTime').value = data.e || '';
         document.getElementById('selectedDateText').innerText = `${months[m]} ${currentDay}.`;
         updateCurrent();
     }
@@ -254,20 +253,18 @@
         const currentM = parseInt(mSel.value);
         let cumulativeBalance = 0;
         let monthlyWork = 0;
-
         for (let m = 0; m <= currentM; m++) {
             const saved = JSON.parse(localStorage.getItem(`work_v10_${m}`)) || {};
-            const days = Object.keys(saved).map(Number).sort((a, b) => a - b);
-            for (let d of days) {
-                if (m === currentM && d > currentDay) continue;
-                if (saved[d].s && saved[d].e) {
-                    const netto = calcNetto(saved[d].s, saved[d].e);
+            for (let d in saved) {
+                if (m === currentM && parseInt(d) > currentDay) continue;
+                const data = saved[d];
+                if (data.s && data.e) {
+                    const netto = calcNetto(data.s, data.e);
                     cumulativeBalance += (netto - 480);
                     if (m === currentM) monthlyWork += netto;
                 }
             }
         }
-
         document.getElementById('tWork').innerText = `${Math.floor(monthlyWork/60)}ó ${monthlyWork%60}p`;
         const bEl = document.getElementById('tBal');
         bEl.innerText = (cumulativeBalance < 0 ? '-' : '+') + `${Math.floor(Math.abs(cumulativeBalance)/60)}ó ${Math.abs(cumulativeBalance)%60}p`;
@@ -279,19 +276,17 @@
         const currentM = parseInt(mSel.value);
         const savedCurrent = JSON.parse(localStorage.getItem(`work_v10_${currentM}`)) || {};
         const captureArea = document.getElementById('captureArea');
-        
         let monthlyWork = 0;
         let totalCumulativeBalance = 0;
         let tableRows = '';
 
-        // Halmozott egyenleg számítás (Áthozat)
         for (let m = 0; m <= currentM; m++) {
             const saved = JSON.parse(localStorage.getItem(`work_v10_${m}`)) || {};
-            const days = Object.keys(saved).map(Number).sort((a, b) => a - b);
-            for (let d of days) {
-                if (m === currentM && d > currentDay) continue;
-                if (saved[d].s && saved[d].e) {
-                    const netto = calcNetto(saved[d].s, saved[d].e);
+            for (let d in saved) {
+                if (m === currentM && parseInt(d) > currentDay) continue;
+                const data = saved[d];
+                if (data.s && data.e) {
+                    const netto = calcNetto(data.s, data.e);
                     totalCumulativeBalance += (netto - 480);
                     if (m === currentM) monthlyWork += netto;
                 }
@@ -299,15 +294,20 @@
         }
         
         const sortedDays = Object.keys(savedCurrent).map(Number).sort((a, b) => a - b);
-        if (sortedDays.length === 0) { alert("Nincs adat!"); return; }
+        let hasRealData = false;
 
         sortedDays.forEach(d => {
             const data = savedCurrent[d];
-            const netto = calcNetto(data.s, data.e);
-            let status = data.isVac ? 'SZABI' : (data.isSick ? 'TÁPPÉNZ' : (netto > 480 ? '+' : (netto < 480 ? '-' : 'OK')));
-            tableRows += `<tr><td>${d}.</td><td>${data.s}</td><td>${data.e}</td><td>${Math.floor(netto/60)}ó ${netto%60}p</td><td>${status}</td></tr>`;
+            if (data.s && data.e) {
+                hasRealData = true;
+                const netto = calcNetto(data.s, data.e);
+                let status = data.isVac ? 'SZABI' : (data.isSick ? 'TÁPPÉNZ' : (netto > 480 ? '+' : (netto < 480 ? '-' : 'OK')));
+                tableRows += `<tr><td>${d}.</td><td>${data.s}</td><td>${data.e}</td><td>${Math.floor(netto/60)}ó ${netto%60}p</td><td>${status}</td></tr>`;
+            }
         });
         
+        if (!hasRealData) { alert("Nincs megjeleníthető adat!"); return; }
+
         captureArea.innerHTML = `
             <div style="text-align:center; padding:10px; border-bottom:2px solid #005691;">
                 <h2 style="margin:0; color:#005691;">${year}. ${months[currentM]}</h2>
