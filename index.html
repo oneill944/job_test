@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Munkaidő Naptár v21.0</title>
+    <title>Munkaidő Naptár v22.0</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -12,7 +12,7 @@
             --p: #005691; --bg: #f4f7f9; --card: #ffffff; --text: #333; --border: #eee;
             --ok: #28a745; --less: #dc3545; --more: #fd7e14; --vac: #007bff;
             --sick: #f1c40f; --holiday: #ff4d4d; --overtime: #9b59b6; --del: #ff4d4d;
-            --extra: #20c997;
+            --extra: #808080; /* Szürke szín a Csúszónak */
             --shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
         [data-theme="dark"] {
@@ -101,6 +101,7 @@
         .btn-sick { background: var(--sick); color: #333; }
         .btn-del { background: var(--del); color: black; }
         .btn-extra { background: var(--extra); color: white; }
+        /* Túlóra teljes szélességben a Törlés és Csúszó alatt */
         .btn-ot { background: var(--overtime); color: white; grid-column: span 2; margin-top: 5px; display: none; }
         
         .btn-capture { background: #333; color: white; width: 100%; margin-top: 15px; grid-column: span 2; font-size: 0.8rem; }
@@ -273,6 +274,7 @@
         const dayOfWeek = new Date(y, m, currentDay).getDay();
         const otBtn = document.getElementById('otBtn');
 
+        // Csak hétvégén jelenik meg a Túlóra
         if (dayOfWeek === 0 || dayOfWeek === 6) {
             otBtn.style.display = 'block';
         } else {
