@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Munkaidő Naptár v16.9</title>
+    <title>Munkaidő Naptár v17.0</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -171,7 +171,6 @@
 
     function isHoliday(y, m, d) {
         const key = `${m}-${d}`;
-        const vKey = `${y}-${m}-${d}`;
         return fixedHolidays.includes(key) || (variableHolidays[y] && variableHolidays[y].includes(key));
     }
 
@@ -313,19 +312,15 @@
         for(let d=1; d<=daysInMonth; d++) {
             const data = saved[d] || {};
             const hol = isHoliday(y, m, d);
-            const holKey = `${m}-${d}`;
-            const varHolKey = `${y}-${m}-${d}`;
-            const holidayName = holidayNames[varHolKey] || holidayNames[holKey];
             
             if(data.s && data.e) {
                 const netto = calcNetto(data.s, data.e);
                 bal += (netto - 480);
                 monthlyWork += netto;
-                let st = data.isVac ? 'SZABI' : (data.isSick ? 'TÁPPÉNZ' : (netto > 480 ? 'TÖBB' : (netto < 480 ? 'KEVESEBB' : 'OK')));
-                if(hol) st += ` / ${holidayName || 'ÜNNEP'}`;
+                let st = data.isVac ? 'SZABI' : (data.isSick ? 'TÁPPÉNZ' : (netto > 480 ? '+' : (netto < 480 ? '-' : 'OK')));
                 rows += `<tr><td>${d}.</td><td>${data.s}</td><td>${data.e}</td><td>${Math.floor(netto/60)}ó ${netto%60}p</td><td>${st}</td></tr>`;
             } else if(hol) {
-                rows += `<tr style="background:#ffecec;"><td>${d}.</td><td colspan="3">---</td><td>${holidayName || 'ÜNNEP'}</td></tr>`;
+                rows += `<tr style="background:#ffecec;"><td>${d}.</td><td colspan="3">---</td><td>ÜNNEP</td></tr>`;
             }
         }
 
@@ -346,10 +341,10 @@
         `;
         
         html2canvas(captureArea, { scale: 2 }).then(canvas => {
-            const link = document.createElement('a');
-            link.download = `Munkaido_${y}_${months[m]}.png`;
-            link.href = canvas.toDataURL("image/png");
-            link.click();
+            const imgData = canvas.toDataURL("image/png");
+            const win = window.open();
+            win.document.write('<img src="' + imgData + '" style="width:100%; max-width:500px; display:block; margin:20px auto; border-radius:10px; box-shadow:0 5px 15px rgba(0,0,0,0.2);">');
+            win.document.write('<p style="text-align:center; font-family:sans-serif; color:#666;">Hosszan nyomj a képre a mentéshez!</p>');
         });
     }
 
