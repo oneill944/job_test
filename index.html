@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Munkaidő Naptár v17.1</title>
+    <title>Munkaidő Naptár v17.2</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -58,8 +58,10 @@
         .dot-holiday::after { top: -4px; right: -6px; font-size: 0.45rem; }
 
         .editor-card { background: var(--card); padding: 22px; border-radius: 24px; box-shadow: var(--shadow); margin-top: 15px; text-align: center; }
-        .date-label { font-size: 1.3rem; font-weight: 800; color: var(--p); margin-bottom: 18px; display: block; }
+        .date-label { font-size: 1.3rem; font-weight: 800; color: var(--p); margin-bottom: 5px; display: block; }
         
+        .holiday-info { color: var(--holiday); font-weight: bold; border: 2px solid var(--holiday); border-radius: 10px; padding: 5px; margin-bottom: 15px; display: none; font-size: 0.9rem; }
+
         input[type="time"] { padding: 12px; border-radius: 14px; border: 2px solid var(--border); font-size: 1.1rem; background: var(--card); color: var(--text); text-align: center; width: 110px; }
         .daily-res { margin: 15px 0; font-size: 1.4rem; font-weight: 800; color: var(--p); }
         
@@ -116,6 +118,7 @@
 
     <div class="editor-card">
         <span id="selectedDateText" class="date-label">-</span>
+        <div id="holBox" class="holiday-info"></div>
         <div style="display:flex; justify-content:center; gap:10px; align-items:center;">
             <input type="time" id="sTime" onfocus="handleFocus('sTime', '05:50')" oninput="updateCurrent()">
             <span>-</span>
@@ -222,6 +225,19 @@
         document.getElementById('sTime').value = data.s || '';
         document.getElementById('eTime').value = data.e || '';
         document.getElementById('selectedDateText').innerText = `${y}. ${months[m]} ${currentDay}.`;
+        
+        const holKey = `${m}-${currentDay}`;
+        const varHolKey = `${y}-${m}-${currentDay}`;
+        const holidayName = holidayNames[varHolKey] || holidayNames[holKey];
+        const holBox = document.getElementById('holBox');
+        
+        if (holidayName && isHoliday(y, m, currentDay)) {
+            holBox.innerText = holidayName;
+            holBox.style.display = 'block';
+        } else {
+            holBox.style.display = 'none';
+        }
+
         updateCurrent();
     }
 
@@ -261,10 +277,6 @@
     function calculateTotals() {
         const targetY = parseInt(ySel.value), targetM = parseInt(mSel.value);
         let cumulativeBalance = 0, monthlyWork = 0;
-        
-        const holKey = `${targetM}-${currentDay}`;
-        const varHolKey = `${targetY}-${targetM}-${currentDay}`;
-        const holidayName = holidayNames[varHolKey] || holidayNames[holKey];
         const balLabel = document.getElementById('balLabel');
 
         for (let m = 0; m <= targetM; m++) {
@@ -283,11 +295,7 @@
         document.getElementById('tWork').innerText = `${Math.floor(monthlyWork/60)}ó ${monthlyWork%60}p`;
         const bEl = document.getElementById('tBal');
         
-        if (holidayName && isHoliday(targetY, targetM, currentDay)) {
-            balLabel.innerText = holidayName;
-        } else {
-            balLabel.innerText = "Egyenleg";
-        }
+        balLabel.innerText = `Egyenleg (${months[targetM]} ${currentDay}-ig)`;
         
         bEl.innerText = (cumulativeBalance < 0 ? '-' : '+') + `${Math.floor(Math.abs(cumulativeBalance)/60)}ó ${Math.abs(cumulativeBalance)%60}p`;
         bEl.style.color = cumulativeBalance < 0 ? '#ffb3b3' : '#b3ffcc';
@@ -310,9 +318,11 @@
         for(let d=1; d<=daysInMonth; d++) {
             const data = saved[d] || {};
             const hol = isHoliday(y, m, d);
-            const dayOfWeek = new Date(y, m, d).getDay(); // 0: Vasárnap, 6: Szombat
+            const holKey = `${m}-${d}`;
+            const varHolKey = `${y}-${m}-${d}`;
+            const holidayName = holidayNames[varHolKey] || holidayNames[holKey];
+            const dayOfWeek = new Date(y, m, d).getDay();
             
-            // Csak akkor adjuk hozzá, ha van adat, VAGY ha hétköznapi ünnepnap
             if(data.s && data.e) {
                 const netto = calcNetto(data.s, data.e);
                 bal += (netto - 480);
@@ -320,8 +330,7 @@
                 let st = data.isVac ? 'SZABI' : (data.isSick ? 'TÁPPÉNZ' : (netto > 480 ? '+' : (netto < 480 ? '-' : 'OK')));
                 rows += `<tr><td>${d}.</td><td>${data.s}</td><td>${data.e}</td><td>${Math.floor(netto/60)}ó ${netto%60}p</td><td>${st}</td></tr>`;
             } else if(hol && dayOfWeek !== 0 && dayOfWeek !== 6) {
-                // Hétköznapi ünnepnap adatok nélkül
-                rows += `<tr style="background:#ffecec;"><td>${d}.</td><td colspan="3">---</td><td>ÜNNEP</td></tr>`;
+                rows += `<tr style="background:#ffecec;"><td>${d}.</td><td colspan="3">---</td><td>${holidayName || 'ÜNNEP'}</td></tr>`;
             }
         }
 
@@ -332,7 +341,7 @@
             </div>
             <div style="background:#005691; color:white; display:flex; justify-content:space-around; padding:15px; border-radius:12px; margin:15px 0;">
                 <div><small>HAVI MUNKA</small><br><b>${Math.floor(monthlyWork/60)}ó ${monthlyWork%60}p</b></div>
-                <div><small>HAVI EGYENLEG</small><br><b>${bal >= 0 ? '+' : ''}${Math.floor(bal/60)}ó ${Math.abs(bal)%60}p</b></div>
+                <div><small>TELJES EGYENLEG</small><br><b>${bal >= 0 ? '+' : ''}${Math.floor(bal/60)}ó ${Math.abs(bal)%60}p</b></div>
             </div>
             <table>
                 <tr style="background:#f0f0f0;"><th>Nap</th><th>Kezdés</th><th>Vége</th><th>Netto</th><th>Státusz</th></tr>
@@ -353,7 +362,6 @@
                     });
                 } catch (err) { console.error("Megosztási hiba:", err); }
             } else {
-                // Tartalék megoldás, ha a share nem érhető el
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
                 link.download = `Munkaido_${y}_${months[m]}.png`;
