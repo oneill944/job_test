@@ -101,7 +101,7 @@
         .btn-sick { background: var(--sick); color: #333; }
         .btn-del { background: var(--del); color: black; }
         .btn-ot { background: var(--overtime); color: white; }
-        .btn-extra { background: var(--extra); color: white; grid-column: span 2; margin-top: 5px; }
+        .btn-extra { background: var(--extra); color: white; }
         
         .btn-capture { background: #333; color: white; width: 100%; margin-top: 15px; grid-column: span 2; font-size: 0.8rem; }
         #captureArea { position: absolute; left: -9999px; top: -9999px; width: 420px; padding: 20px; background: white; color: black; }
@@ -143,7 +143,7 @@
             <div class="legend-item"><span class="dot" style="background:var(--sick)"></span> Táppénz</div>
             <div class="legend-item"><span class="dot" style="background:var(--more)"></span> Több mint 8 óra</div>
             <div class="legend-item"><span class="dot" style="background:var(--overtime)"></span> Túlóra</div>
-            <div class="legend-item"><span class="dot" style="background:var(--extra)"></span> Ledolgozott -8ó</div>
+            <div class="legend-item"><span class="dot" style="background:var(--extra)"></span> Csúszó (-8ó egyenleg)</div>
             <div class="legend-item"><span class="dot dot-holiday"></span> Ünnepnap 🇭🇺</div>
         </div>
         <button class="action-btn btn-capture" onclick="captureMonth()">📷 HÓNAP MENTÉSE KÉPKÉNT</button>
@@ -162,7 +162,7 @@
             <button class="action-btn btn-sick" onclick="setSpecial('sick')">TÁPPÉNZ</button>
             <button class="action-btn btn-del" onclick="deleteDay()">TÖRLÉS</button>
             <button id="otBtn" class="action-btn btn-ot" onclick="setSpecial('ot')">TÚLÓRA</button>
-            <button id="extraBtn" class="action-btn btn-extra" onclick="setSpecial('extra')">LEDOLGOZOTT -8Ó</button>
+            <button id="extraBtn" class="action-btn btn-extra" onclick="setSpecial('extra')">CSÚSZÓ</button>
             <button class="action-btn btn-save" onclick="saveData()">MENTÉS</button>
         </div>
     </div>
@@ -272,14 +272,12 @@
         
         const dayOfWeek = new Date(y, m, currentDay).getDay();
         const otBtn = document.getElementById('otBtn');
-        const extraBtn = document.getElementById('extraBtn');
 
+        // Túlóra csak hétvégén látszik, de a Csúszó és a többi gomb mindig
         if (dayOfWeek === 0 || dayOfWeek === 6) {
             otBtn.style.display = 'block';
-            extraBtn.style.display = 'block';
         } else {
             otBtn.style.display = 'none';
-            extraBtn.style.display = 'none';
         }
 
         updateCurrent();
@@ -342,13 +340,12 @@
                     if (data.isOT) {
                         cumulativeBalance += 0; 
                     } else if (data.isExtra) {
-                        cumulativeBalance -= 480; // Levon 8 órát az egyenlegből
+                        cumulativeBalance -= 480; 
                     } else {
                         cumulativeBalance += (netto - 480);
                     }
                     
                     if (m === targetM) {
-                        // Extra gombnál 8 órát hozzáad a havi munkához (480p)
                         if (data.isExtra) monthlyWork += 480;
                         else monthlyWork += netto;
                     }
@@ -390,7 +387,7 @@
                 else bal += (netto - 480);
                 
                 monthlyWork += netto;
-                let st = data.isVac ? 'SZABI' : (data.isSick ? 'TÁPPÉNZ' : (data.isOT ? 'TÚLÓRA' : (data.isExtra ? 'LEDOLGOZOTT -8Ó' : (netto > 480 ? '+' : (netto < 480 ? '-' : 'OK')))));
+                let st = data.isVac ? 'SZABI' : (data.isSick ? 'TÁPPÉNZ' : (data.isOT ? 'TÚLÓRA' : (data.isExtra ? 'CSÚSZÓ' : (netto > 480 ? '+' : (netto < 480 ? '-' : 'OK')))));
                 if(holName && !isWeekend) st += ` / ${holName}`;
                 let rowColor = (data.isOT || data.isExtra) ? 'style="background:#f3e5f5;"' : '';
                 rows += `<tr ${rowColor}><td>${d}.</td><td>${data.isExtra ? '---' : data.s}</td><td>${data.isExtra ? '---' : data.e}</td><td>${Math.floor(netto/60)}ó ${netto%60}p</td><td>${st}</td></tr>`;
