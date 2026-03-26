@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Munkaidő Naptár v16.1 - Teljes Jelmagyarázat</title>
+    <title>Munkaidő Naptár v16.2 - Téma mentése</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -41,7 +41,6 @@
         .day.empty { border: none; background: transparent; cursor: default; }
         .day.selected { border: 2.5px solid var(--p) !important; box-shadow: 0 0 10px rgba(0,86,145,0.4); z-index: 1; }
         
-        /* Ünnepnap jelölése a naptárban */
         .day.holiday { border: 2px solid var(--holiday) !important; color: var(--holiday); }
         .day.holiday::after { content: '🇭🇺'; position: absolute; top: 2px; right: 2px; font-size: 0.5rem; }
 
@@ -51,19 +50,9 @@
         .status-vac { background: var(--vac) !important; color: white; border: none; }
         .status-sick { background: var(--sick) !important; color: #333; border: none; }
 
-        /* Kétoszlopos jelmagyarázat */
-        .legend { 
-            display: grid; 
-            grid-template-columns: 1.3fr 1fr; 
-            gap: 8px; 
-            margin-top: 20px; 
-            padding: 15px 5px 5px 5px; 
-            border-top: 1px solid var(--border); 
-        }
+        .legend { display: grid; grid-template-columns: 1.3fr 1fr; gap: 8px; margin-top: 20px; padding: 15px 5px 5px 5px; border-top: 1px solid var(--border); }
         .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.7rem; color: #888; font-weight: 600; white-space: nowrap; }
         .dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
-        
-        /* Ünnepnap jelölése a jelmagyarázatban */
         .dot.dot-holiday { border: 1.5px solid var(--holiday); background: transparent; position: relative; }
         .dot.dot-holiday::after { content: '🇭🇺'; position: absolute; font-size: 0.4rem; top: -1px; right: -5px; }
 
@@ -137,22 +126,24 @@
 <div id="captureArea"></div>
 
 <script>
+    // Téma inicializálása a legelső lépésben
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.body.setAttribute('data-theme', savedTheme);
+    document.getElementById('tBtn').innerText = savedTheme === 'dark' ? '☀️' : '🌙';
+
     const months = ["Január","Február","Március","Április","Május","Június","Július","Augusztus","Szeptember","Október","November","December"];
-    
     const fixedHolidays = ["0-1", "2-15", "4-1", "7-20", "9-23", "10-1", "11-25", "11-26"];
     const variableHolidays = {
-        "2024": ["2-29", "3-1", "4-20"],
-        "2025": ["3-18", "3-21", "5-9"],
-        "2026": ["3-3", "3-6", "4-25"],
-        "2027": ["2-26", "2-29", "4-17"],
-        "2028": ["3-14", "3-17", "5-5"],
-        "2029": ["2-30", "3-2", "4-21"],
+        "2024": ["2-29", "3-1", "4-20"], "2025": ["3-18", "3-21", "5-9"],
+        "2026": ["3-3", "3-6", "4-25"], "2027": ["2-26", "2-29", "4-17"],
+        "2028": ["3-14", "3-17", "5-5"], "2029": ["2-30", "3-2", "4-21"],
         "2030": ["3-19", "3-22", "5-10"]
     };
 
     let currentDay = new Date().getDate();
     let currentYear = new Date().getFullYear();
 
+    // Év és hónap választók feltöltése
     const ySel = document.getElementById('ySel');
     for(let y=2024; y<=2030; y++) {
         const opt = document.createElement('option');
@@ -169,18 +160,17 @@
         mSel.appendChild(opt);
     });
 
-    function isHoliday(y, m, d) {
-        const key = `${m}-${d}`;
-        if (fixedHolidays.includes(key)) return true;
-        if (variableHolidays[y] && variableHolidays[y].includes(key)) return true;
-        return false;
+    function toggleTheme() {
+        const currentTheme = document.body.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        document.body.setAttribute('data-theme', newTheme);
+        document.getElementById('tBtn').innerText = newTheme === 'dark' ? '☀️' : '🌙';
+        localStorage.setItem('theme', newTheme); // Mentés
     }
 
-    function toggleTheme() {
-        const isDark = document.body.getAttribute('data-theme') === 'dark';
-        document.body.setAttribute('data-theme', isDark ? 'light' : 'dark');
-        document.getElementById('tBtn').innerText = isDark ? '🌙' : '☀️';
-        localStorage.setItem('theme', isDark ? 'light' : 'dark');
+    function isHoliday(y, m, d) {
+        const key = `${m}-${d}`;
+        return fixedHolidays.includes(key) || (variableHolidays[y] && variableHolidays[y].includes(key));
     }
 
     function renderCalendar() {
