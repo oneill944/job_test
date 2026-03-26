@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Munkaidő Naptár v16.5</title>
+    <title>Munkaidő Naptár v16.6</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -100,7 +100,7 @@
             <div class="legend-item"><span class="dot" style="background:var(--ok)"></span> Pontos</div>
             <div class="legend-item"><span class="dot" style="background:var(--sick)"></span> Táppénz</div>
             <div class="legend-item"><span class="dot" style="background:var(--more)"></span> Több</div>
-            <div class="legend-item"><span class="dot dot-holiday"></span> Ünnep (H-P)</div>
+            <div class="legend-item"><span class="dot dot-holiday"></span> Ünnepnap</div>
         </div>
         
         <button class="action-btn btn-capture" onclick="captureMonth()">📷 HÓNAP MENTÉSE KÉPKÉNT</button>
@@ -131,26 +131,28 @@
 
     const months = ["Január","Február","Március","Április","Május","Június","Július","Augusztus","Szeptember","Október","November","December"];
     
-    // Ünnepnapok nevei a kijelzéshez
+    // Ünnepnapok adatbázisa
     const holidayNames = {
         "0-1": "Újév", "2-15": "Március 15.", "4-1": "Munka ünnepe", "7-20": "Államalapítás",
         "9-23": "1956-os forradalom", "10-1": "Mindenszentek", "11-25": "Karácsony", "11-26": "Karácsony",
-        "2026-3-3": "Húsvéthétfő", "2026-4-25": "Pünkösdhétfő"
+        // Változó ünnepek specifikusan
+        "2026-3-3": "Nagypéntek", "2026-3-6": "Húsvéthétfő", "2026-4-25": "Pünkösdhétfő",
+        "2025-3-18": "Nagypéntek", "2025-3-21": "Húsvéthétfő", "2025-5-9": "Pünkösdhétfő"
     };
 
     const fixedHolidays = ["0-1", "2-15", "4-1", "7-20", "9-23", "10-1", "11-25", "11-26"];
     const variableHolidays = {
-        "2024": ["2-29", "3-1", "4-20"], "2025": ["3-18", "3-21", "5-9"],
-        "2026": ["3-3", "3-6", "4-25"], "2027": ["2-26", "2-29", "4-17"],
-        "2028": ["3-14", "3-17", "5-5"], "2029": ["2-30", "3-2", "4-21"],
-        "2030": ["3-19", "3-22", "5-10"]
+        "2024": ["2-29", "3-1", "4-20"], 
+        "2025": ["3-18", "3-21", "5-9"],
+        "2026": ["3-3", "3-6", "4-25"], 
+        "2027": ["2-26", "2-29", "4-17"]
     };
 
     let currentDay = new Date().getDate();
     let currentYear = new Date().getFullYear();
 
     const ySel = document.getElementById('ySel');
-    for(let y=2024; y<=2030; y++) {
+    for(let y=2024; y<=2027; y++) {
         const opt = document.createElement('option');
         opt.value = y; opt.text = y;
         if(y === currentYear) opt.selected = true;
@@ -260,7 +262,6 @@
         const targetY = parseInt(ySel.value), targetM = parseInt(mSel.value);
         let cumulativeBalance = 0, monthlyWork = 0;
         
-        // Ünnepnap ellenőrzése a fejléc számára
         const holKey = `${targetM}-${currentDay}`;
         const varHolKey = `${targetY}-${targetM}-${currentDay}`;
         const holidayName = holidayNames[varHolKey] || holidayNames[holKey];
@@ -313,6 +314,11 @@
             const hol = isHoliday(y, m, d);
             const dayOfWeek = new Date(y, m, d).getDay();
             const isWeekdayHoliday = hol && dayOfWeek !== 0 && dayOfWeek !== 6;
+            
+            const holKey = `${m}-${d}`;
+            const varHolKey = `${y}-${m}-${d}`;
+            const holidayName = holidayNames[varHolKey] || holidayNames[holKey];
+
             const rowStyle = isWeekdayHoliday ? 'style="background:#ffecec;"' : '';
             
             if(data.s && data.e) {
@@ -320,10 +326,10 @@
                 bal += (netto - 480);
                 monthlyWork += netto;
                 let st = data.isVac ? 'SZABI' : (data.isSick ? 'TÁPPÉNZ' : (netto > 480 ? '+' : (netto < 480 ? '-' : 'OK')));
-                if(isWeekdayHoliday) st += ' / ÜNNEP';
+                if(isWeekdayHoliday) st += ` / ${holidayName || 'ÜNNEP'}`;
                 rows += `<tr ${rowStyle}><td>${d}.</td><td>${data.s}</td><td>${data.e}</td><td>${Math.floor(netto/60)}ó ${netto%60}p</td><td>${st}</td></tr>`;
             } else if(isWeekdayHoliday) {
-                rows += `<tr ${rowStyle}><td>${d}.</td><td colspan="3">---</td><td>ÜNNEP</td></tr>`;
+                rows += `<tr ${rowStyle}><td>${d}.</td><td colspan="3">---</td><td>${holidayName || 'ÜNNEP'}</td></tr>`;
             }
         }
 
