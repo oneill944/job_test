@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Munkaidő Naptár v17.4</title>
+    <title>Munkaidő Naptár v17.5</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -28,14 +28,41 @@
         .sel-box { padding: 10px; border-radius: 12px; border: 1px solid var(--border); font-size: 1rem; font-weight: bold; background: var(--card); color: var(--text); cursor: pointer; }
         .theme-toggle { background: none; border: none; font-size: 1.5rem; cursor: pointer; padding: 5px; line-height: 1; }
         
-        /* Kék box elrendezése */
-        .stats { display: flex; justify-content: space-around; background: var(--p); color: white; padding: 15px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,86,145,0.3); min-height: 85px; align-items: center; }
-        .stat-item { text-align: center; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; }
+        /* Kék box alapja */
+        .stats { 
+            display: flex; 
+            justify-content: space-around; 
+            background: var(--p); 
+            color: white; 
+            padding: 15px; 
+            border-radius: 20px; 
+            box-shadow: 0 4px 12px rgba(0,86,145,0.3); 
+            min-height: 90px; 
+            align-items: center; 
+            position: relative; /* Ehhez igazítjuk alulra a piros kockát */
+            padding-bottom: 30px; /* Hely a piros kockának */
+        }
+        .stat-item { text-align: center; flex: 1; display: flex; flex-direction: column; }
         .stat-val { display: block; font-weight: 800; font-size: 1.1rem; }
-        .stats small { opacity: 0.9; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px; display: block; line-height: 1.2; margin-bottom: 4px; }
+        .stats small { opacity: 0.9; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px; display: block; line-height: 1.2; margin-bottom: 2px; }
 
-        /* JAVÍTOTT: Teli piros ünnep jelölő pontosan középen */
-        .holiday-badge { background: #ff4d4d; color: black; font-weight: 900; padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; text-transform: uppercase; margin: 4px 0; display: none; line-height: 1.1; }
+        /* JAVÍTOTT: A kék kocka legalján, középen elhelyezett piros ünnep jelző */
+        .holiday-badge { 
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ff4d4d; 
+            color: black; 
+            font-weight: 900; 
+            padding: 3px 12px; 
+            border-radius: 6px; 
+            font-size: 0.7rem; 
+            text-transform: uppercase; 
+            display: none; 
+            white-space: nowrap;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
 
         .calendar-card { background: var(--card); padding: 18px; border-radius: 24px; box-shadow: var(--shadow); }
         .weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-weight: bold; font-size: 0.7rem; color: #888; margin-bottom: 12px; }
@@ -92,9 +119,9 @@
             </div>
             <div class="stat-item">
                 <small id="balLabel">Egyenleg</small>
-                <div id="holBadge" class="holiday-badge">ÜNNEP</div>
                 <span id="tBal" class="stat-val">0ó 0p</span>
             </div>
+            <div id="holBadge" class="holiday-badge">ÜNNEP</div>
         </div>
     </div>
 
@@ -285,6 +312,7 @@
         document.getElementById('tWork').innerText = `${Math.floor(monthlyWork/60)}ó ${monthlyWork%60}p`;
         document.getElementById('balLabel').innerText = `Egyenleg (${months[targetM]} ${currentDay}-ig)`;
         
+        // Ünnep kocka megjelenítése a kék kocka legalján
         if (holidayName && isHoliday(targetY, targetM, currentDay)) {
             holBadge.innerText = holidayName;
             holBadge.style.display = 'block';
