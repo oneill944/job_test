@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Munkaidő Naptár v13.2</title>
+    <title>Munkaidő Naptár v13.3</title>
     <style>
         :root { 
             --p: #005691; --bg: #f4f7f9; --card: #ffffff; --text: #333; --border: #eee;
@@ -16,15 +16,16 @@
         }
 
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; display: flex; justify-content: center; transition: 0.3s; }
-        .app { width: 100%; max-width: 450px; position: relative; }
+        .app { width: 100%; max-width: 450px; }
 
-        /* FIX IKON POZÍCIÓ - Teljesen külön a hónapválasztótól */
-        .theme-toggle { position: absolute; top: -5px; right: 5px; background: none; border: none; font-size: 1.5rem; cursor: pointer; padding: 10px; z-index: 100; }
+        .header { background: var(--card); padding: 20px; border-radius: 24px; box-shadow: var(--shadow); margin-bottom: 15px; }
         
-        .header { background: var(--card); padding: 20px; border-radius: 24px; box-shadow: var(--shadow); margin-bottom: 15px; margin-top: 10px; }
-        .month-sel { width: 90%; padding: 12px; border-radius: 14px; border: 1px solid var(--border); font-size: 1.1rem; font-weight: bold; color: var(--p); background: var(--card); color: var(--text); cursor: pointer; }
+        /* ÚJ: Egy sorba rendezett fejléc elemek */
+        .top-row { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+        .month-sel { flex-grow: 1; padding: 12px; border-radius: 14px; border: 1px solid var(--border); font-size: 1.1rem; font-weight: bold; color: var(--p); background: var(--card); color: var(--text); cursor: pointer; }
+        .theme-toggle { background: none; border: none; font-size: 1.5rem; cursor: pointer; padding: 5px; line-height: 1; }
         
-        .stats { display: flex; justify-content: space-around; background: var(--p); color: white; padding: 18px; border-radius: 20px; margin-top: 15px; box-shadow: 0 4px 12px rgba(0,86,145,0.3); }
+        .stats { display: flex; justify-content: space-around; background: var(--p); color: white; padding: 18px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,86,145,0.3); }
         .stat-val { display: block; font-weight: 800; font-size: 1.2rem; margin-top: 4px; }
         .stats small { opacity: 0.8; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; }
 
@@ -42,10 +43,10 @@
         .status-more { background: var(--more) !important; color: white; border: none; }
         .status-vac { background: var(--vac) !important; color: white; border: none; }
 
-        /* JAVÍTOTT SZÍNMAGYARÁZAT - Naptár alatt */
-        .legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border); }
-        .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: #888; font-weight: bold; }
-        .dot { width: 12px; height: 12px; border-radius: 4px; }
+        /* Visszaállított teljes szöveges jelmagyarázat */
+        .legend { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; padding: 15px 5px 5px 5px; border-top: 1px solid var(--border); }
+        .legend-item { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: #888; }
+        .dot { width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0; }
 
         .editor-card { background: var(--card); padding: 22px; border-radius: 24px; box-shadow: var(--shadow); margin-top: 15px; text-align: center; }
         .date-label { font-size: 1.3rem; font-weight: 800; color: var(--p); margin-bottom: 18px; display: block; }
@@ -64,10 +65,11 @@
 <body data-theme="light">
 
 <div class="app">
-    <button class="theme-toggle" onclick="toggleTheme()" id="tBtn">🌙</button>
-
     <div class="header">
-        <select id="mSel" class="month-sel" onchange="renderCalendar()"></select>
+        <div class="top-row">
+            <select id="mSel" class="month-sel" onchange="renderCalendar()"></select>
+            <button class="theme-toggle" onclick="toggleTheme()" id="tBtn">🌙</button>
+        </div>
         <div class="stats">
             <div><small>Havi munka</small><span id="tWork" class="stat-val">0ó 0p</span></div>
             <div><small id="balLabel">Egyenleg</small><span id="tBal" class="stat-val">0ó 0p</span></div>
@@ -81,10 +83,10 @@
         <div id="daysGrid" class="days"></div>
         
         <div class="legend">
-            <div class="legend-item"><span class="dot" style="background:var(--less)"></span> &lt; 8ó</div>
-            <div class="legend-item"><span class="dot" style="background:var(--ok)"></span> 8ó</div>
-            <div class="legend-item"><span class="dot" style="background:var(--more)"></span> &gt; 8ó</div>
-            <div class="legend-item"><span class="dot" style="background:var(--vac)"></span> SZABI</div>
+            <div class="legend-item"><span class="dot" style="background:var(--less)"></span> Kevesebb mint 8 óra</div>
+            <div class="legend-item"><span class="dot" style="background:var(--ok)"></span> Pontosan 8 óra</div>
+            <div class="legend-item"><span class="dot" style="background:var(--more)"></span> Több mint 8 óra</div>
+            <div class="legend-item"><span class="dot" style="background:var(--vac)"></span> Szabadság</div>
         </div>
     </div>
 
@@ -247,8 +249,6 @@
         const bEl = document.getElementById('tBal');
         bEl.innerText = (cumulativeBalance < 0 ? '-' : '+') + `${Math.floor(Math.abs(cumulativeBalance)/60)}ó ${Math.abs(cumulativeBalance)%60}p`;
         bEl.style.color = cumulativeBalance < 0 ? '#ffb3b3' : '#b3ffcc';
-        
-        // JAVÍTVA: Itt újra kiírja a hónap nevét is
         document.getElementById('balLabel').innerText = `Egyenleg (${months[currentM]} ${currentDay}-ig)`;
     }
 
